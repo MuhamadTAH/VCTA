@@ -61,13 +61,10 @@ async def update_store_rules(
     resolved_store_id = store_id or payload.store_id or 1
 
     async with get_database() as db:
-        cursor = await db.execute(
-            "SELECT id FROM stores WHERE id = ?",
-            (resolved_store_id,),
-        )
-        row = await cursor.fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Store not found")
+        cursor = await db.execute("SELECT id FROM stores WHERE id = ?", (resolved_store_id,))
+        if not cursor.fetchone():
+            await db.execute("INSERT INTO stores (id, business_name) VALUES (?, ?)", (resolved_store_id, f"Store {resolved_store_id}"))
+            await db.commit()
         rules_value = payload.context_rules if isinstance(payload.context_rules, str) else json.dumps(payload.context_rules)
         await db.execute(
             "UPDATE stores SET context_rules = ? WHERE id = ?",
@@ -77,6 +74,10 @@ async def update_store_rules(
 
     if payload.telegram_bot_token:
         async with get_database() as db:
+            cursor = await db.execute("SELECT id FROM stores WHERE id = ?", (resolved_store_id,))
+            if not cursor.fetchone():
+                await db.execute("INSERT INTO stores (id, business_name) VALUES (?, ?)", (resolved_store_id, f"Store {resolved_store_id}"))
+                await db.commit()
             await db.execute(
                 """INSERT INTO bot_settings (store_id, telegram_bot_token) VALUES (?, ?)
                    ON CONFLICT(store_id) DO UPDATE SET telegram_bot_token = excluded.telegram_bot_token, updated_at = CURRENT_TIMESTAMP""",

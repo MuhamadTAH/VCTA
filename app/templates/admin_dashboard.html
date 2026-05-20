@@ -605,7 +605,7 @@
                 const response = await fetch('/api/store/rules', {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ telegram_bot_token: token })
+                    body: JSON.stringify({ store_id: storeId, telegram_bot_token: token })
                 });
                 if (response.ok) {
                     statusEl.textContent = '✓ بە سەرکەوتوویی بەسترا';
@@ -631,7 +631,7 @@
                 const response = await fetch('/api/store/rules', {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ context_rules: rules })
+                    body: JSON.stringify({ store_id: storeId, context_rules: rules })
                 });
                 if (response.ok) {
                     statusEl.textContent = '✓ نوێکرایەوە';
