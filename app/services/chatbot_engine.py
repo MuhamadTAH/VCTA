@@ -48,19 +48,19 @@ def build_system_prompt(store_id: int, context_rules: str, catalog_json: str) ->
 
 
 async def _call_minimax(api_key: str, base_url: str, model: str, messages: list[dict], system_prompt: str) -> AsyncGenerator[str, None]:
-    from openai import AsyncOpenAI
-    client = AsyncOpenAI(api_key=api_key, base_url=base_url)
-    stream = await client.chat.completions.create(
+    from anthropic import AsyncAnthropic
+    client = AsyncAnthropic(api_key=api_key, base_url=base_url)
+    stream = client.messages.stream(
         model=model,
-        messages=[{"role": "system", "content": system_prompt}] + messages,
-        stream=True,
+        system=system_prompt,
+        messages=messages,
         max_tokens=500,
-        temperature=0.7,
+        stream_options={"include_usage": True},
     )
-    async for chunk in stream:
-        content = chunk.choices[0].delta.content
-        if content:
-            yield content
+    async with stream as stream_response:
+        async for text_event in stream_response.text_events:
+            if text_event.type == "content_block_delta":
+                yield text_event.delta.text
 
 
 async def _call_openai(api_key: str, messages: list[dict], system_prompt: str) -> AsyncGenerator[str, None]:

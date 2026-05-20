@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     WHATSAPP_API_KEY: str | None = Field(default=None)
     VAPID_PUBLIC_KEY: str | None = Field(default=None)
     MINIMAX_API_KEY: str | None = Field(default=None)
-    MINIMAX_API_BASE_URL: str = Field(default="https://api.minimax.io/v1")
-    LLM_MODEL: str = Field(default="minimax-text-01")
+    MINIMAX_API_BASE_URL: str = Field(default="https://api.minimaxi.com/anthropic")
+    LLM_MODEL: str = Field(default="MiniMax-M2.7")
     TELEGRAM_BOT_TOKEN: str | None = Field(default=None)
     TELEGRAM_BOT_USERNAME: str | None = Field(default=None)
 
