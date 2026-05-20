@@ -47,6 +47,54 @@ def build_system_prompt(store_id: int, context_rules: str, catalog_json: str) ->
     )
 
 
+async def _call_minimax(api_key: str, base_url: str, model: str, messages: list[dict], system_prompt: str) -> AsyncGenerator[str, None]:
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+    stream = await client.chat.completions.create(
+        model=model,
+        messages=[{"role": "system", "content": system_prompt}] + messages,
+        stream=True,
+        max_tokens=500,
+        temperature=0.7,
+    )
+    async for chunk in stream:
+        content = chunk.choices[0].delta.content
+        if content:
+            yield content
+
+
+async def _call_openai(api_key: str, messages: list[dict], system_prompt: str) -> AsyncGenerator[str, None]:
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(api_key=api_key)
+    stream = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "system", "content": system_prompt}] + messages,
+        stream=True,
+        stream_options={"include_usage": True},
+        max_tokens=500,
+        temperature=0.7,
+    )
+    async for chunk in stream:
+        content = chunk.choices[0].delta.content
+        if content:
+            yield content
+
+
+async def _call_anthropic(api_key: str, messages: list[dict], system_prompt: str) -> AsyncGenerator[str, None]:
+    from anthropic import AsyncAnthropic
+    client = AsyncAnthropic(api_key=api_key)
+    stream = await client.messages.stream(
+        model="claude-sonnet-4-20250514",
+        system=system_prompt,
+        messages=messages,
+        max_tokens=500,
+    )
+    async with stream as stream_response:
+        async for text_event in stream_response.text_events:
+            if text_event.type == "content_block_delta":
+                yield text_event.delta.text
+
+
 async def generate_streaming_response(
     messages: list[dict],
     store_id: int,
@@ -56,64 +104,45 @@ async def generate_streaming_response(
     settings = get_settings()
     system_prompt = build_system_prompt(store_id, context_rules, catalog_json)
 
+    tried_minimax = False
     if settings.MINIMAX_API_KEY:
-        from openai import AsyncOpenAI
+        try:
+            async for token in _call_minimax(
+                settings.MINIMAX_API_KEY,
+                settings.MINIMAX_API_BASE_URL,
+                settings.LLM_MODEL,
+                messages,
+                system_prompt,
+            ):
+                yield token
+            return
+        except Exception as e:
+            yield f"\n[MiniMax error: {str(e)[:80]}] "
+            tried_minimax = True
 
-        client = AsyncOpenAI(
-            api_key=settings.MINIMAX_API_KEY,
-            base_url=settings.MINIMAX_API_BASE_URL,
-        )
-
-        stream = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
-            messages=[{"role": "system", "content": system_prompt}] + messages,
-            stream=True,
-            max_tokens=500,
-            temperature=0.7,
-        )
-
-        async for chunk in stream:
-            content = chunk.choices[0].delta.content
-            if content:
-                yield content
-
-    elif settings.OPENAI_API_KEY:
-        from openai import AsyncOpenAI
-
-        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-
-        stream = await client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "system", "content": system_prompt}] + messages,
-            stream=True,
-            stream_options={"include_usage": True},
-            max_tokens=500,
-            temperature=0.7,
-        )
-
-        async for chunk in stream:
-            content = chunk.choices[0].delta.content
-            if content:
-                yield content
-
+    if settings.OPENAI_API_KEY:
+        try:
+            async for token in _call_openai(settings.OPENAI_API_KEY, messages, system_prompt):
+                yield token
+            return
+        except Exception as e:
+            yield f"\n[OpenAI error: {str(e)[:80]}] "
+            if settings.ANTHROPIC_API_KEY:
+                try:
+                    async for token in _call_anthropic(settings.ANTHROPIC_API_KEY, messages, system_prompt):
+                        yield token
+                    return
+                except Exception as e2:
+                    yield f"\n[Anthropic error: {str(e2)[:80]}] "
     elif settings.ANTHROPIC_API_KEY:
-        from anthropic import AsyncAnthropic
+        try:
+            async for token in _call_anthropic(settings.ANTHROPIC_API_KEY, messages, system_prompt):
+                yield token
+            return
+        except Exception as e:
+            yield f"\n[Anthropic error: {str(e)[:80]}] "
 
-        client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-
-        stream = await client.messages.stream(
-            model="claude-sonnet-4-20250514",
-            system=system_prompt,
-            messages=messages,
-            max_tokens=500,
-        )
-
-        async with stream as stream_response:
-            async for text_event in stream_response.text_events:
-                if text_event.type == "content_block_delta":
-                    yield text_event.delta.text
-
-    else:
+    if not settings.MINIMAX_API_KEY and not settings.OPENAI_API_KEY and not settings.ANTHROPIC_API_KEY:
         yield "No AI provider configured. Please set MINIMAX_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY."
 
 
