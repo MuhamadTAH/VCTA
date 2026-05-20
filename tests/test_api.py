@@ -124,11 +124,19 @@ async def test_app_exits_when_DATABASE_URL_missing():
         os.environ.pop("FFMPEG_PATH", None)
         os.environ.pop("OPENAI_API_KEY", None)
         os.environ.pop("ANTHROPIC_API_KEY", None)
+        os.environ.pop("MINIMAX_API_KEY", None)
+        os.environ.pop("ACTIVE_TTS_ENGINE", None)
         from app.core import config
         config._cached_settings = None
-        with pytest.raises(SystemExit) as exc_info:
-            config.get_settings()
-        assert exc_info.value.code is not None
+        from pydantic_settings import SettingsConfigDict
+        original_config = config.Settings.model_config.copy()
+        config.Settings.model_config = SettingsConfigDict(env_file=".env_does_not_exist_12345", extra="ignore")
+        try:
+            with pytest.raises(SystemExit) as exc_info:
+                config.get_settings()
+            assert exc_info.value.code is not None
+        finally:
+            config.Settings.model_config = original_config
     finally:
         os.environ.clear()
         os.environ.update(original_env)
