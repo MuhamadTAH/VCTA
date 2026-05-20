@@ -2,7 +2,7 @@ import io
 import json
 import httpx
 import asyncio
-import subprocess
+import base64
 from app.core.config import get_settings
 
 
@@ -15,8 +15,6 @@ async def synthesize_speech(text: str, output_path: str | None = None) -> tuple[
     if not settings.MINIMAX_API_KEY:
         return False, None
 
-    import httpx
-
     headers = {
         "Authorization": f"Bearer {settings.MINIMAX_API_KEY}",
         "Content-Type": "application/json",
@@ -25,6 +23,16 @@ async def synthesize_speech(text: str, output_path: str | None = None) -> tuple[
     payload = {
         "model": MODEL,
         "text": text,
+        "stream": False,
+        "voice_setting": {
+            "voice_id": "male-qn-qingse",
+        },
+        "audio_setting": {
+            "format": "mp3",
+            "sample_rate": 32000,
+            "bitrate": 128000,
+            "channel": 1,
+        },
     }
 
     try:
@@ -38,12 +46,13 @@ async def synthesize_speech(text: str, output_path: str | None = None) -> tuple[
             if response.status_code != 200:
                 return False, None
 
-            content_type = response.headers.get("content-type", "")
+            data = response.json()
 
-            if "audio" in content_type or "mpeg" in content_type or "mp3" in content_type:
-                audio_bytes = response.content
-            else:
-                audio_bytes = response.content
+            audio_hex = data.get("data", {}).get("audio")
+            if not audio_hex:
+                return False, None
+
+            audio_bytes = bytes.fromhex(audio_hex)
 
             if output_path:
                 with open(output_path, "wb") as f:

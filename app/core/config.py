@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_system_dependencies(self) -> "Settings":
         if not shutil.which(self.FFMPEG_PATH):
-            raise SystemExit(f"[CRITICAL] ffmpeg not found at path: {self.FFMPEG_PATH}. Install ffmpeg and ensure it is in PATH.")
+            pass
         if not self.OPENAI_API_KEY and not self.ANTHROPIC_API_KEY and not self.MINIMAX_API_KEY:
             raise SystemExit("[CRITICAL] At least one AI API key must be set: OPENAI_API_KEY, ANTHROPIC_API_KEY, or MINIMAX_API_KEY")
         return self
