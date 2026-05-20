@@ -38,7 +38,8 @@ class CatalogResponse(BaseModel):
 async def get_store_rules(store_id: int):
     async with get_database() as db:
         cursor = await db.execute("SELECT id FROM stores WHERE id = ?", (store_id,))
-        if not cursor.fetchone():
+        row = await cursor.fetchone()
+        if not row:
             await db.execute("INSERT INTO stores (id, business_name) VALUES (?, ?)", (store_id, f"Store {store_id}"))
             await db.commit()
         cursor = await db.execute("SELECT context_rules FROM stores WHERE id = ?", (store_id,))
@@ -62,7 +63,8 @@ async def update_store_rules(
 
     async with get_database() as db:
         cursor = await db.execute("SELECT id FROM stores WHERE id = ?", (resolved_store_id,))
-        if not cursor.fetchone():
+        row = await cursor.fetchone()
+        if not row:
             await db.execute("INSERT INTO stores (id, business_name) VALUES (?, ?)", (resolved_store_id, f"Store {resolved_store_id}"))
             await db.commit()
         rules_value = payload.context_rules if isinstance(payload.context_rules, str) else json.dumps(payload.context_rules)
@@ -74,10 +76,6 @@ async def update_store_rules(
 
     if payload.telegram_bot_token:
         async with get_database() as db:
-            cursor = await db.execute("SELECT id FROM stores WHERE id = ?", (resolved_store_id,))
-            if not cursor.fetchone():
-                await db.execute("INSERT INTO stores (id, business_name) VALUES (?, ?)", (resolved_store_id, f"Store {resolved_store_id}"))
-                await db.commit()
             await db.execute(
                 """INSERT INTO bot_settings (store_id, telegram_bot_token) VALUES (?, ?)
                    ON CONFLICT(store_id) DO UPDATE SET telegram_bot_token = excluded.telegram_bot_token, updated_at = CURRENT_TIMESTAMP""",
@@ -91,13 +89,13 @@ async def update_store_rules(
 @router.get("/catalog", response_model=CatalogResponse)
 async def get_catalog(store_id: int):
     async with get_database() as db:
-        cursor = await db.execute(
-            "SELECT catalog_json FROM stores WHERE id = ?",
-            (store_id,),
-        )
+        cursor = await db.execute("SELECT id FROM stores WHERE id = ?", (store_id,))
         row = await cursor.fetchone()
         if not row:
-            raise HTTPException(status_code=404, detail="Store not found")
+            await db.execute("INSERT INTO stores (id, business_name) VALUES (?, ?)", (store_id, f"Store {store_id}"))
+            await db.commit()
+        cursor = await db.execute("SELECT catalog_json FROM stores WHERE id = ?", (store_id,))
+        row = await cursor.fetchone()
         try:
             catalog = json.loads(row[0]) if row[0] else []
         except (json.JSONDecodeError, TypeError):
@@ -108,13 +106,13 @@ async def get_catalog(store_id: int):
 @router.post("/catalog")
 async def add_catalog_item(store_id: int, item: CatalogItem):
     async with get_database() as db:
-        cursor = await db.execute(
-            "SELECT catalog_json FROM stores WHERE id = ?",
-            (store_id,),
-        )
+        cursor = await db.execute("SELECT id FROM stores WHERE id = ?", (store_id,))
         row = await cursor.fetchone()
         if not row:
-            raise HTTPException(status_code=404, detail="Store not found")
+            await db.execute("INSERT INTO stores (id, business_name) VALUES (?, ?)", (store_id, f"Store {store_id}"))
+            await db.commit()
+        cursor = await db.execute("SELECT catalog_json FROM stores WHERE id = ?", (store_id,))
+        row = await cursor.fetchone()
         try:
             catalog = json.loads(row[0]) if row[0] else []
         except (json.JSONDecodeError, TypeError):
@@ -137,13 +135,12 @@ async def add_catalog_item(store_id: int, item: CatalogItem):
 @router.delete("/catalog/{item_id}")
 async def delete_catalog_item(store_id: int, item_id: str):
     async with get_database() as db:
-        cursor = await db.execute(
-            "SELECT catalog_json FROM stores WHERE id = ?",
-            (store_id,),
-        )
+        cursor = await db.execute("SELECT id FROM stores WHERE id = ?", (store_id,))
         row = await cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Store not found")
+        cursor = await db.execute("SELECT catalog_json FROM stores WHERE id = ?", (store_id,))
+        row = await cursor.fetchone()
         try:
             catalog = json.loads(row[0]) if row[0] else []
         except (json.JSONDecodeError, TypeError):
