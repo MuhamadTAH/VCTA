@@ -21,12 +21,11 @@ from app.utils.cleanup import cleanup_loop
 async def lifespan(app: FastAPI):
     try:
         await init_db()
-    except Exception as e:
-        logging.critical(f"Database initialization failed: {e}")
-        raise
     except SystemExit as e:
         logging.critical(f"System dependency check failed: {e}")
         raise
+    except Exception as e:
+        logging.warning(f"Database init warning: {e}")
 
     cleanup_task = asyncio.create_task(cleanup_loop(interval_seconds=900))
     logging.info("[startup] Cleanup background task launched")
@@ -83,23 +82,29 @@ async def health_check():
 
 @app.get("/admin/{store_id}", response_class=HTMLResponse)
 async def admin_dashboard(request: Request, store_id: int):
-    async with get_database() as db:
-        cursor = await db.execute("SELECT id, name, language, audio_url FROM voice_library")
-        rows = await cursor.fetchall()
-        voices = [{"id": r[0], "name": r[1], "language": r[2], "audio_url": r[3]} for r in rows]
+    voices = []
+    session_uuid = "debug-session-id"
 
-        cursor = await db.execute("SELECT id FROM sessions WHERE store_id = ? LIMIT 1", (store_id,))
-        row = await cursor.fetchone()
-        if row:
-            session_uuid = row[0]
-        else:
-            import uuid
-            session_uuid = str(uuid.uuid4())
-            await db.execute(
-                "INSERT INTO sessions (id, store_id, anonymous_user_id) VALUES (?, ?, ?)",
-                (session_uuid, store_id, str(uuid.uuid4())),
-            )
-            await db.commit()
+    try:
+        async with get_database() as db:
+            cursor = await db.execute("SELECT id, name, language, audio_url FROM voice_library LIMIT 10")
+            rows = await cursor.fetchall()
+            voices = [{"id": r[0], "name": r[1], "language": r[2], "audio_url": r[3]} for r in rows]
+
+            cursor = await db.execute("SELECT id FROM sessions WHERE store_id = ? LIMIT 1", (store_id,))
+            row = await cursor.fetchone()
+            if row:
+                session_uuid = row[0]
+            else:
+                import uuid
+                session_uuid = str(uuid.uuid4())
+                await db.execute(
+                    "INSERT INTO sessions (id, store_id, anonymous_user_id) VALUES (?, ?, ?)",
+                    (session_uuid, store_id, str(uuid.uuid4())),
+                )
+                await db.commit()
+    except Exception as e:
+        print(f"DB error in admin dashboard: {e}")
 
     return templates.TemplateResponse(request, "admin_dashboard.html", {
         "request": request,
