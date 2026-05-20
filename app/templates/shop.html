@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>پسپۆڕی چات — Store Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body{direction:rtl;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
+        .chat-bubble-user{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
+        .chat-bubble-assistant{background:#f3f4f6}
+        .typing-dot{animation:typing 1.4s infinite;display:inline-block}
+        .typing-dot:nth-child(2){animation-delay:.2s}
+        .typing-dot:nth-child(3){animation-delay:.4s}
+        @keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+        .step-card{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
+        .arrow{font-size:2rem;color:#667eea}
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div id="landing-view" class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden mb-4">
+        <div class="step-card p-6 text-white text-center">
+            <h1 class="text-2xl font-bold mb-2">چالاکردنی پسپۆڕی ڕاگەیاندن</h1>
+            <p class="text-white/90 text-sm">چالاککردنی ئاگانامەکان بۆ وەرگرتنی دەنگ و ڤیدیۆی وەرگێڕدراو</p>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <div class="flex items-center gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <span class="text-indigo-600 font-bold text-lg">١</span>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-800">کلیک لە سێ خاڵەکە بکە</h3>
+                    <p class="text-gray-500 text-sm">لە سەرەوەی لای ڕاستی وێبگەڕەکە</p>
+                </div>
+            </div>
+
+            <div class="flex justify-center">
+                <span class="arrow">↓</span>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <span class="text-indigo-600 font-bold text-lg">٢</span>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-800">کلیک لە "Open in Safari"</h3>
+                    <p class="text-gray-500 text-sm">هەڵبژاردەیەکی لە پێڕستی هەرەوەر</p>
+                </div>
+            </div>
+
+            <div class="flex justify-center">
+                <span class="arrow">↓</span>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <span class="text-indigo-600 font-bold text-lg">٣</span>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-800">چوونە ژوورەوە بۆ چات</h3>
+                    <p class="text-gray-500 text-sm">دەتوانیت پسپۆڕی ڕاگەیاندن چالاک بکەیت</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 rounded-xl p-4 text-center">
+                <p class="text-2xl mb-1">⋮⋮</p>
+                <p class="text-xs text-gray-400">سێ خاڵەکە (menu dots)</p>
+            </div>
+
+            <button onclick="showChat()" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors">
+                کردنەوەی چات
+            </button>
+
+            <a
+                id="telegram-btn"
+                href="#"
+                class="block w-full py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors text-center"
+            >
+                <span class="inline-flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.965 6.692-1.305 8.651a.67.67 0 01-.305.385.657.657 0 01-.405-.123c-.09-.06-.178-.126-.267-.187a6.84 6.84 0 01-.423-.306c-.045-.033-.09-.067-.135-.1a.68.68 0 01-.13-.076.657.657 0 01-.123-.405c.12-.4.375-.765.648-1.184.27-.417.558-.843.747-1.212.19-.37.346-.762.443-1.123.097-.36.164-.729.195-1.05.032-.32.027-.648-.015-.976a7.07 7.07 0 00-.097-.52 6.4 6.4 0 00-.187-.616 4.5 4.5 0 00-.27-.495c-.045-.12-.094-.24-.138-.36a2.5 2.5 0 00-.103-.21 1.5 1.5 0 00-.123-.165.657.657 0 01-.123-.405.68.68 0 01.123-.405c.06-.09.126-.178.187-.267.18-.264.363-.525.495-.753.18-.308.328-.627.405-.915.135-.525.18-1.072.075-1.575a.657.657 0 01.123-.405c.06-.09.126-.178.187-.267a.68.68 0 01.123-.27.657.657 0 01.405-.123c.36 0 .705.12.988.35l.105.075c.27.21.54.42.787.642.247.225.48.465.698.72.215.255.413.525.582.817.17.293.322.6.45.918z"/></svg>
+                    بەردەوامبوون لە تیلیگرام
+                </span>
+            </a>
+
+            <div class="border-t pt-4 text-center">
+                <p class="text-xs text-gray-400">
+                    هەر کەمێک ڕاگەیاندنەکە چالاک بکەیت، ئەتوانیت هەواڵی نوێ ببیت لەسەر دە orders یاخود ڤیدیۆی وەرگێڕدراو.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div id="chat-container" class="max-w-lg w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col hidden" style="height:600px;max-height:80vh">
+        <div class="chat-header bg-gradient-to-r from-indigo-600 to-purple-600 p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white text-lg">🏪</div>
+                <div>
+                    <h2 class="text-white font-bold text-sm">یارمەتیدەری کۆگا</h2>
+                    <span id="connection-status" class="text-white/70 text-xs">پەیوەندی...</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="showLanding()" class="text-white/80 hover:text-white text-sm transition-colors">← شوێن</button>
+                <button onclick="hideChat()" class="text-white/80 hover:text-white text-2xl leading-none transition-colors">&times;</button>
+            </div>
+        </div>
+
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center">
+                <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-3xl mb-3">💬</div>
+                <p class="text-gray-500 text-sm">پرسیارێک بنووسە بۆ دەستپێکردن</p>
+            </div>
+        </div>
+
+        <div id="typing-indicator" class="hidden px-4 py-3 bg-gray-50 border-t border-gray-100">
+            <div class="flex items-center gap-2">
+                <div class="flex gap-1">
+                    <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+                    <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+                    <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+                </div>
+                <span class="text-gray-400 text-xs">تایپ دەکات...</span>
+            </div>
+        </div>
+
+        <div class="border-t p-3 bg-white">
+            <form id="chat-form" class="flex gap-2" onsubmit="sendChat(event)">
+                <input
+                    id="chat-input"
+                    type="text"
+                    placeholder="پرسیارێک بنووسە..."
+                    autocomplete="off"
+                    class="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                >
+                <button
+                    type="submit"
+                    id="send-btn"
+                    class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <svg id="send-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                    <svg id="loading-icon" class="w-5 h-5 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const storeId = {{ store_id }};
+        const sessionId = {{ session_id }};
+
+        let ws = null;
+        let isConnected = false;
+        let currentAssistantDiv = null;
+
+        function showChat() {
+            document.getElementById('landing-view').classList.add('hidden');
+            document.getElementById('chat-container').classList.remove('hidden');
+            document.getElementById('chat-container').style.display = 'flex';
+            connectWebSocket();
+        }
+
+        function showLanding() {
+            document.getElementById('chat-container').classList.add('hidden');
+            document.getElementById('landing-view').classList.remove('hidden');
+        }
+
+        function hideChat() {
+            document.getElementById('chat-container').style.display = 'none';
+        }
+
+        function showTyping() {
+            document.getElementById('typing-indicator').classList.remove('hidden');
+            const emptyState = document.getElementById('empty-state');
+            if (emptyState) emptyState.classList.add('hidden');
+            scrollToBottom();
+        }
+
+        function hideTyping() {
+            document.getElementById('typing-indicator').classList.add('hidden');
+        }
+
+        function scrollToBottom() {
+            const messagesDiv = document.getElementById('chat-messages');
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function appendMessage(role, content) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const emptyState = document.getElementById('empty-state');
+            if (emptyState) emptyState.remove();
+
+            const div = document.createElement('div');
+            const isUser = role === 'user';
+            div.className = `flex ${isUser ? 'justify-start' : 'justify-end'}`;
+
+            const bubble = document.createElement('div');
+            if (isUser) {
+                bubble.className = 'chat-bubble-user text-white rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%] shadow-md';
+                bubble.textContent = content;
+            } else {
+                bubble.className = 'chat-bubble-assistant text-gray-800 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm border border-gray-100';
+                bubble.textContent = content;
+            }
+
+            div.appendChild(bubble);
+            messagesDiv.appendChild(div);
+            scrollToBottom();
+            return bubble;
+        }
+
+        function appendAssistantStart() {
+            hideTyping();
+            const messagesDiv = document.getElementById('chat-messages');
+            const emptyState = document.getElementById('empty-state');
+            if (emptyState) emptyState.remove();
+
+            const div = document.createElement('div');
+            div.className = 'flex justify-end';
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble-assistant text-gray-800 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm border border-gray-100';
+            div.appendChild(bubble);
+            messagesDiv.appendChild(div);
+            scrollToBottom();
+            return bubble;
+        }
+
+        function setLoading(loading) {
+            const sendBtn = document.getElementById('send-btn');
+            const sendIcon = document.getElementById('send-icon');
+            const loadingIcon = document.getElementById('loading-icon');
+            const input = document.getElementById('chat-input');
+
+            sendBtn.disabled = loading;
+            sendIcon.classList.toggle('hidden', loading);
+            loadingIcon.classList.toggle('hidden', !loading);
+            input.disabled = loading;
+        }
+
+        function updateConnectionStatus(status) {
+            const el = document.getElementById('connection-status');
+            if (!el) return;
+            if (status === 'connected') {
+                el.textContent = 'پەیوەندی بەسترا';
+                el.className = 'text-green-300 text-xs';
+                isConnected = true;
+            } else if (status === 'disconnected') {
+                el.textContent = 'پەیوەندی بیسترا';
+                el.className = 'text-red-300 text-xs';
+                isConnected = false;
+            } else {
+                el.textContent = status;
+                el.className = 'text-white/70 text-xs';
+            }
+        }
+
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) return;
+
+            updateConnectionStatus('پەیوەندی...');
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws/chat/${storeId}/${sessionId}`);
+
+            ws.onopen = () => {
+                updateConnectionStatus('connected');
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+
+                    if (msg.type === 'start') {
+                        currentAssistantDiv = appendAssistantStart();
+                        setLoading(false);
+                    } else if (msg.type === 'token') {
+                        if (currentAssistantDiv) {
+                            currentAssistantDiv.textContent += msg.content;
+                            scrollToBottom();
+                        }
+                    } else if (msg.type === 'end') {
+                        currentAssistantDiv = null;
+                        setLoading(false);
+                    } else if (msg.type === 'error') {
+                        hideTyping();
+                        setLoading(false);
+                    }
+                } catch (e) {
+                    if (currentAssistantDiv) {
+                        currentAssistantDiv.textContent += event.data;
+                        scrollToBottom();
+                    }
+                }
+            };
+
+            ws.onerror = () => {
+                updateConnectionStatus('هەڵەی پەیوەندی');
+                setLoading(false);
+                hideTyping();
+            };
+
+            ws.onclose = () => {
+                updateConnectionStatus('disconnected');
+                isConnected = false;
+                ws = null;
+            };
+        }
+
+        async function sendChat(event) {
+            if (event) event.preventDefault();
+
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+
+            if (!text) return;
+            if (!isConnected) {
+                connectWebSocket();
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                setLoading(true);
+                showTyping();
+                appendMessage('user', text);
+                input.value = '';
+                ws.send(JSON.stringify({ content: text }));
+            } else {
+                updateConnectionStatus('کەڕەت... هەوڵیدەمەوە');
+                setTimeout(connectWebSocket, 1000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const landingView = document.getElementById('landing-view');
+            const chatContainer = document.getElementById('chat-container');
+
+            const telegramBtn = document.getElementById('telegram-btn');
+            const tgUsername = "{{ telegram_bot_username }}";
+            if (telegramBtn && tgUsername) {
+                const deepLink = 'tg://resolve?domain=' + tgUsername + '&start=store_' + storeId;
+                const fallbackLink = 'https://t.me/' + tgUsername + '?start=store_' + storeId;
+                telegramBtn.href = deepLink;
+                telegramBtn.target = '_blank';
+                telegramBtn.addEventListener('click', function(e) {
+                    var navigated = false;
+                    var iframe = document.createElement('iframe');
+                    iframe.src = deepLink;
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                    setTimeout(function() {
+                        document.body.removeChild(iframe);
+                        if (!navigated) {
+                            window.location.href = fallbackLink;
+                        }
+                        navigated = true;
+                    }, 1000);
+                    e.preventDefault();
+                });
+            } else if (telegramBtn) {
+                telegramBtn.style.display = 'none';
+            }
+
+            if (window.location.search.includes('chat=true')) {
+                showChat();
+            } else {
+                landingView.classList.remove('hidden');
+                chatContainer.classList.add('hidden');
+            }
+        });
+
+        if (window.location.protocol === 'intent:') {
+            setTimeout(function() {
+                window.location.href = window.location.href.replace('intent:', 'https:');
+            }, 500);
+        }
+    </script>
+</body>
+</html>

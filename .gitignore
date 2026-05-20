@@ -1,0 +1,12 @@
+.env
+data/
+__pycache__/
+.pytest_cache/
+*.pyc
+node_modules/
+*.mp3
+*.wav
+static/voices/
+static/outputs/
+.env.local
+*.log

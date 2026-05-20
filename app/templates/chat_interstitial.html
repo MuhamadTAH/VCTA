@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>چالاکردنی ئاگانامە — Enable Notifications</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body{direction:rtl;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
+        .pulse-animation{{animation:pulse 2s infinite}}
+        @keyframes pulse{{0%{{opacity:1}}50%{{opacity:0.5}}100%{{opacity:1}}}}
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 min-h-screen flex flex-col items-center justify-center p-6">
+    <div class="max-w-md w-full bg-white/95 backdrop-blur rounded-3xl shadow-2xl overflow-hidden">
+        <div class="p-8 text-center border-b border-gray-100">
+            <div class="w-20 h-20 mx-auto mb-4 bg-indigo-100 rounded-full flex items-center justify-center pulse-animation">
+                <svg class="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">چالاکردنی ئاگانامەکان</h1>
+            <p class="text-gray-500 text-sm">بۆ وەرگرتنی هەواڵی نوێ لەسەر order ەکانت</p>
+        </div>
+
+        <div class="p-8 space-y-6">
+            <div class="bg-indigo-50 rounded-2xl p-5 text-right">
+                <p class="text-indigo-900 font-semibold mb-2">ئەمە چییە؟</p>
+                <p class="text-indigo-700 text-sm leading-relaxed">
+                    کاتێک ئەتوانیت ئاگانامە چالاک بکەیت، ئەتوانیت هەواڵی نوێ ببیت لەسەر:
+                </p>
+                <ul class="text-indigo-700 text-sm mt-3 space-y-2">
+                    <li class="flex items-center gap-2">
+                        <span class="text-green-500">✓</span>
+                        دەستپێکردنی ڤیدیۆ وەرگێڕدراو
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <span class="text-green-500">✓</span>
+                        نوێکردنەوەی order
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <span class="text-green-500">✓</span>
+                        پسپۆڕی ڕاگەیاندن
+                    </li>
+                </ul>
+            </div>
+
+            <button
+                id="enableBtn"
+                onclick="requestNotificationPermission()"
+                class="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
+            >
+                چالاکردنی ئاگانامە
+            </button>
+
+            <div id="status" class="hidden text-center text-sm text-gray-500"></div>
+
+            <div id="successMessage" class="hidden text-center">
+                <div class="w-16 h-16 mx-auto mb-3 bg-green-100 rounded-full flex items-center justify-center">
+                    <span class="text-3xl">✓</span>
+                </div>
+                <p class="text-green-700 font-semibold">ئاگانامە چالاک کرا!</p>
+                <p class="text-green-600 text-sm mt-1">ئێستا ئەتوانیت پسپۆڕی ڕاگەیاندن بکەیت</p>
+            </div>
+
+            <div class="text-center">
+                <a href="#" class="text-gray-400 text-sm hover:text-gray-600 transition-colors">
+                    پێشاندان بۆ داهاتوو
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function requestNotificationPermission() {
+            const btn = document.getElementById('enableBtn');
+            const status = document.getElementById('status');
+            const success = document.getElementById('successMessage');
+            
+            btn.disabled = true;
+            btn.innerText = 'چاوەروان بە...';
+            status.classList.remove('hidden');
+            status.innerText = 'پرسیار دەکرێت...';
+            
+            try {
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    const sessionId = {{ session_id }};
+                    
+                    const registration = await navigator.serviceWorker.register('/static/sw.js');
+                    
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: '{{ vapid_key }}'
+                    });
+                    
+                    const endpoint = subscription.endpoint;
+                    const p256dh = subscription.getKey('p256dh');
+                    const auth = subscription.getKey('auth');
+                    
+                    const token = btoa(String.fromCharCode.apply(null, new Uint8Array(p256dh)));
+                    
+                    const response = await fetch('/push/subscribe', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            session_id: sessionId,
+                            endpoint: endpoint,
+                            token: token
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        status.classList.add('hidden');
+                        btn.classList.add('hidden');
+                        success.classList.remove('hidden');
+                    } else {
+                        status.innerText = 'هەڵەیەک ڕوویدا. هەوڵبدەرەوە.';
+                        btn.disabled = false;
+                        btn.innerText = 'هەوڵیدەمەوە';
+                    }
+                } else {
+                    status.innerText = 'ئاگانامە ڕەت کرایەوە. دەتوانیت دواتر چالاکی بکەیت.';
+                    btn.disabled = false;
+                    btn.innerText = 'هەوڵیدەمەوە';
+                }
+            } catch (error) {
+                console.error('Notification error:', error);
+                status.innerText = 'هەڵەیەک ڕوویدا: ' + error.message;
+                btn.disabled = false;
+                btn.innerText = 'هەوڵیدەمەوە';
+            }
+        }
+    </script>
+</body>
+</html>

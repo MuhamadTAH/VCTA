@@ -1,0 +1,3 @@
+@echo off
+echo Starting FastAPI + localhost.run tunnel...
+powershell -ExecutionPolicy Bypass -NoExit -File "%~dp0start_localhostrun.ps1"
