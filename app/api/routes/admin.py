@@ -37,13 +37,12 @@ class CatalogResponse(BaseModel):
 @router.get("/rules", response_model=StoreRulesResponse)
 async def get_store_rules(store_id: int):
     async with get_database() as db:
-        cursor = await db.execute(
-            "SELECT context_rules FROM stores WHERE id = ?",
-            (store_id,),
-        )
+        cursor = await db.execute("SELECT id FROM stores WHERE id = ?", (store_id,))
+        if not cursor.fetchone():
+            await db.execute("INSERT INTO stores (id, business_name) VALUES (?, ?)", (store_id, f"Store {store_id}"))
+            await db.commit()
+        cursor = await db.execute("SELECT context_rules FROM stores WHERE id = ?", (store_id,))
         row = await cursor.fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Store not found")
         try:
             rules = json.loads(row[0]) if row[0] else {}
         except (json.JSONDecodeError, TypeError):
