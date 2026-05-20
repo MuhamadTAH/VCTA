@@ -77,25 +77,13 @@ async def update_store_rules(
         await db.commit()
 
     if payload.telegram_bot_token:
-        from app.core.config import Settings
-        import os
-        env_path = Path(".env")
-        env_lines = []
-        if env_path.exists():
-            with open(env_path) as f:
-                env_lines = f.readlines()
-        found = False
-        new_lines = []
-        for line in env_lines:
-            if line.startswith("TELEGRAM_BOT_TOKEN="):
-                new_lines.append(f"TELEGRAM_BOT_TOKEN={payload.telegram_bot_token}\n")
-                found = True
-            else:
-                new_lines.append(line)
-        if not found:
-            new_lines.append(f"TELEGRAM_BOT_TOKEN={payload.telegram_bot_token}\n")
-        with open(env_path, "w") as f:
-            f.writelines(new_lines)
+        async with get_database() as db:
+            await db.execute(
+                """INSERT INTO bot_settings (store_id, telegram_bot_token) VALUES (?, ?)
+                   ON CONFLICT(store_id) DO UPDATE SET telegram_bot_token = excluded.telegram_bot_token, updated_at = CURRENT_TIMESTAMP""",
+                (resolved_store_id, payload.telegram_bot_token),
+            )
+            await db.commit()
 
     return {"store_id": resolved_store_id, "context_rules": payload.context_rules}
 

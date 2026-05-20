@@ -21,6 +21,7 @@ async def init_db() -> None:
         create_video_jobs = "video_jobs" not in existing_tables
         create_telegram_sessions = "telegram_sessions" not in existing_tables
         create_voice_library = "voice_library" not in existing_tables
+        create_bot_settings = None
 
         if create_stores:
             await db.execute("""
@@ -88,6 +89,23 @@ async def init_db() -> None:
                     name TEXT NOT NULL,
                     language TEXT NOT NULL,
                     audio_url TEXT NOT NULL
+                )
+            """)
+        if create_bot_settings is None:
+            try:
+                await db.execute("SELECT id FROM bot_settings LIMIT 1")
+                create_bot_settings = False
+            except:
+                create_bot_settings = True
+        if create_bot_settings:
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS bot_settings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    store_id INTEGER NOT NULL UNIQUE,
+                    telegram_bot_token TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (store_id) REFERENCES stores(id)
                 )
             """)
         await db.commit()

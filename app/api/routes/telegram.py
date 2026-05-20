@@ -22,13 +22,23 @@ class TelegramUpdate(BaseModel):
     message: dict | None = None
 
 
-async def send_telegram_message(chat_id: str, text: str) -> bool:
-    settings = get_settings()
-    if not settings.TELEGRAM_BOT_TOKEN:
+async def get_store_telegram_token(store_id: int) -> str | None:
+    async with get_database() as db:
+        cursor = await db.execute(
+            "SELECT telegram_bot_token FROM bot_settings WHERE store_id = ?",
+            (store_id,)
+        )
+        row = await cursor.fetchone()
+        return row[0] if row else None
+
+
+async def send_telegram_message(chat_id: str, text: str, store_id: int = 1) -> bool:
+    token = await get_store_telegram_token(store_id)
+    if not token:
         return False
 
     import httpx
-    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
 
     try:
